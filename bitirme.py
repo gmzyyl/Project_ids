@@ -221,48 +221,48 @@ for name, (model, params) in grid_models.items():
 
     joblib.dump(grid.best_estimator_, f"{name}_best.joblib")
 
-    # =========================
-    # DL
-    # =========================
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# =========================
+# DL
+# =========================
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    X_train_t = torch.tensor(X_train, dtype=torch.float32)
-    y_train_t = torch.tensor(y_train, dtype=torch.long)
+X_train_t = torch.tensor(X_train, dtype=torch.float32)
+y_train_t = torch.tensor(y_train, dtype=torch.long)
 
-    input_size = X.shape[1]
-    num_classes = len(np.unique(y))
+input_size = X.shape[1]
+num_classes = len(np.unique(y))
 
-    def train(model, name):
-        model.to(device)
-        optimizer = optim.Adam(model.parameters(), lr=0.001)
-        loss_fn = nn.CrossEntropyLoss()
+def train(model, name):
+    model.to(device)
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    loss_fn = nn.CrossEntropyLoss()
 
-        epochs = 3
-        batch_size = 512
+    epochs = 3
+    batch_size = 512
 
-        for epoch in range(epochs):
-            perm = torch.randperm(X_train_t.size(0))
+    for epoch in range(epochs):
+        perm = torch.randperm(X_train_t.size(0))
 
-            for i in range(0, X_train_t.size(0), batch_size):
-                idx = perm[i:i+batch_size]
+        for i in range(0, X_train_t.size(0), batch_size):
+            idx = perm[i:i+batch_size]
 
-                x_batch = X_train_t[idx].to(device)
-                y_batch = y_train_t[idx].to(device)
+            x_batch = X_train_t[idx].to(device)
+            y_batch = y_train_t[idx].to(device)
 
-                optimizer.zero_grad()
-                out = model(x_batch)
-                loss = loss_fn(out, y_batch)
-                loss.backward()
-                optimizer.step()
+            optimizer.zero_grad()
+            out = model(x_batch)
+            loss = loss_fn(out, y_batch)
+            loss.backward()
+            optimizer.step()
 
-            print(f"{name} Epoch {epoch+1}/{epochs}")
+        print(f"{name} Epoch {epoch+1}/{epochs}")
 
-        torch.save(model.state_dict(), f"{name}.pth")
+    torch.save(model.state_dict(), f"{name}.pth")
 
-    print("\n--- DL TRAIN ---")
+print("\n--- DL TRAIN ---")
 
-    train(ANN1(input_size, 64, num_classes), "ANN1")
-    train(ANN2(input_size, 64, num_classes), "ANN2_Dropout")
-    train(ANN3(input_size, 64, num_classes), "ANN3_BatchNormDeep")
+train(ANN1(input_size, 64, num_classes), "ANN1")
+train(ANN2(input_size, 64, num_classes), "ANN2_Dropout")
+train(ANN3(input_size, 64, num_classes), "ANN3_BatchNormDeep")
 
-    print("\n IDS READY")
+print("\n IDS READY")
