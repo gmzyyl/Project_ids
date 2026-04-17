@@ -164,41 +164,40 @@ if __name__ == "__main__":
 
         y_pred = model.predict(X_test)
 
-print(f"\n{name}")
+        print(f"\n{name}")
+        # =========================
+        # BASIC METRICS
+        # =========================
+        acc = accuracy_score(y_test, y_pred)
+        prec_macro = precision_score(y_test, y_pred, average="macro")
+        rec_macro = recall_score(y_test, y_pred, average="macro")
+        f1_macro = f1_score(y_test, y_pred, average="macro")
 
-# =========================
-# BASIC METRICS
-# =========================
-acc = accuracy_score(y_test, y_pred)
-prec_macro = precision_score(y_test, y_pred, average="macro")
-rec_macro = recall_score(y_test, y_pred, average="macro")
-f1_macro = f1_score(y_test, y_pred, average="macro")
+        prec_weighted = precision_score(y_test, y_pred, average="weighted")
+        rec_weighted = recall_score(y_test, y_pred, average="weighted")
+        f1_weighted = f1_score(y_test, y_pred, average="weighted")
 
-prec_weighted = precision_score(y_test, y_pred, average="weighted")
-rec_weighted = recall_score(y_test, y_pred, average="weighted")
-f1_weighted = f1_score(y_test, y_pred, average="weighted")
+        print("Accuracy:", acc)
 
-print("Accuracy:", acc)
+        print("Precision (macro):", prec_macro)
+        print("Recall (macro):", rec_macro)
+        print("F1 (macro):", f1_macro)
 
-print("Precision (macro):", prec_macro)
-print("Recall (macro):", rec_macro)
-print("F1 (macro):", f1_macro)
+        print("Precision (weighted):", prec_weighted)
+        print("Recall (weighted):", rec_weighted)
+        print("F1 (weighted):", f1_weighted)
 
-print("Precision (weighted):", prec_weighted)
-print("Recall (weighted):", rec_weighted)
-print("F1 (weighted):", f1_weighted)
+        # =========================
+        # IDS CRITICAL ANALYSIS
+        # =========================
+        print("\n--- CLASS REPORT (IDS DETAIL) ---")
+        print(classification_report(y_test, y_pred))
 
-# =========================
-# IDS CRITICAL ANALYSIS
-# =========================
-print("\n--- CLASS REPORT (IDS DETAIL) ---")
-print(classification_report(y_test, y_pred))
-
-# =========================
-# CONFUSION MATRIX (OPTIONAL DEBUG)
-# =========================
-print("\n--- CONFUSION MATRIX ---")
-print(confusion_matrix(y_test, y_pred))
+        # =========================
+        # CONFUSION MATRIX (OPTIONAL DEBUG)
+        # =========================
+        print("\n--- CONFUSION MATRIX ---")
+        print(confusion_matrix(y_test, y_pred))
 
     # =========================
     # DL
