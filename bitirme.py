@@ -18,6 +18,7 @@ from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, Gradien
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.model_selection import GridSearchCV
 
 
 # =========================
@@ -144,60 +145,81 @@ if __name__ == "__main__":
 
     print("Train:", X_train.shape, "Test:", X_test.shape)
 
-    # =========================
-    # ML MODELS
-    # =========================
-    models = {
-        "LogisticRegression": LogisticRegression(max_iter=1000),
-        "DecisionTree": DecisionTreeClassifier(),
-        "RandomForest": RandomForestClassifier(n_estimators=50),
-        "SVM": SVC(kernel="linear"),
-        "KNN": KNeighborsClassifier(n_neighbors=3),
-        "AdaBoost": AdaBoostClassifier(n_estimators=50),
-        "GradientBoosting": GradientBoostingClassifier(n_estimators=50, learning_rate=0.1)
-    }
+   # =========================
+# GRIDSEARCH ML MODELS
+# =========================
 
-    print("\n--- ML TRAIN ---")
+print("\n--- GRIDSEARCH ML TRAIN ---")
 
-    for name, model in models.items():
-        model.fit(X_train, y_train)
+grid_models = {
+    "LogisticRegression": (
+        LogisticRegression(max_iter=1000),
+        {"C": [0.1, 1, 10]}
+    ),
 
-        y_pred = model.predict(X_test)
+    "DecisionTree": (
+        DecisionTreeClassifier(),
+        {
+            "max_depth": [5, 10, 20, None],
+            "min_samples_split": [2, 5]
+        }
+    ),
 
-        print(f"\n{name}")
-        # =========================
-        # BASIC METRICS
-        # =========================
-        acc = accuracy_score(y_test, y_pred)
-        prec_macro = precision_score(y_test, y_pred, average="macro")
-        rec_macro = recall_score(y_test, y_pred, average="macro")
-        f1_macro = f1_score(y_test, y_pred, average="macro")
+    "RandomForest": (
+        RandomForestClassifier(),
+        {
+            "n_estimators": [50, 100],
+            "max_depth": [10, 20, None]
+        }
+    ),
 
-        prec_weighted = precision_score(y_test, y_pred, average="weighted")
-        rec_weighted = recall_score(y_test, y_pred, average="weighted")
-        f1_weighted = f1_score(y_test, y_pred, average="weighted")
+    "SVM": (
+        SVC(),
+        {
+            "C": [0.1, 1, 10],
+            "kernel": ["linear", "rbf"]
+        }
+    ),
 
-        print("Accuracy:", acc)
+    "KNN": (
+        KNeighborsClassifier(),
+        {
+            "n_neighbors": [3, 5, 7]
+        }
+    )
+}
+for name, (model, params) in grid_models.items():
 
-        print("Precision (macro):", prec_macro)
-        print("Recall (macro):", rec_macro)
-        print("F1 (macro):", f1_macro)
+    print(f"\n🔍 Tuning {name}...")
 
-        print("Precision (weighted):", prec_weighted)
-        print("Recall (weighted):", rec_weighted)
-        print("F1 (weighted):", f1_weighted)
+    grid = GridSearchCV(
+        model,
+        params,
+        cv=3,
+        scoring="f1_macro",
+        n_jobs=-1,
+        verbose=1
+    )
 
-        # =========================
-        # IDS CRITICAL ANALYSIS
-        # =========================
-        print("\n--- CLASS REPORT (IDS DETAIL) ---")
-        print(classification_report(y_test, y_pred))
+    grid.fit(X_train, y_train)
 
-        # =========================
-        # CONFUSION MATRIX (OPTIONAL DEBUG)
-        # =========================
-        print("\n--- CONFUSION MATRIX ---")
-        print(confusion_matrix(y_test, y_pred))
+    y_pred = grid.predict(X_test)
+
+    print("\n", name)
+    print("Best Params:", grid.best_params_)
+
+    print("Accuracy:", accuracy_score(y_test, y_pred))
+    print("Precision (macro):", precision_score(y_test, y_pred, average="macro"))
+    print("Recall (macro):", recall_score(y_test, y_pred, average="macro"))
+    print("F1 (macro):", f1_score(y_test, y_pred, average="macro"))
+
+    print("\n--- CLASS REPORT ---")
+    print(classification_report(y_test, y_pred))
+
+    print("\n--- CONFUSION MATRIX ---")
+    print(confusion_matrix(y_test, y_pred))
+
+    joblib.dump(grid.best_estimator_, f"{name}_best.joblib")
 
     # =========================
     # DL
