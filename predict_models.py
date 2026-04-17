@@ -1,62 +1,68 @@
 import pandas as pd
 import joblib
-import torch
 import numpy as np
 from glob import glob
-from bitirme import ANN1, ANN2, ANN3
+from collections import Counter
 
 # =========================
-# 1) WIRESHARK CSV OKU
+# 1) CSV OKU
 # =========================
 all_files = glob(r"C:\Users\gamze\OneDrive\Masaüstü\CSVFILES\*.csv")
 
-df = pd.concat([pd.read_csv(f) for f in all_files], ignore_index=True)
+df = pd.concat([pd.read_csv(f, encoding="latin1") for f in all_files], ignore_index=True)
 df.columns = df.columns.str.strip()
 
-# sadece sayısal
-df = df.select_dtypes(include=[np.number])
-df = df.replace([np.inf, -np.inf], np.nan).fillna(0)
+# =========================
+# 2) FEATURE FIX (EN ÖNEMLİ KISIM)
+# =========================
+feature_names = joblib.load("feature_names.pkl")
+
+# eksik/fazla kolonları düzelt
+df = df.reindex(columns=feature_names, fill_value=0)
 
 X = df.values
-
 print("Feature:", X.shape)
 
 # =========================
-# 2) SCALER
+# 3) SCALER
 # =========================
 scaler = joblib.load("scaler.pkl")
 X = scaler.transform(X)
 
 # =========================
-# 3) SKLEARN TAHMİN
+# 4) MODEL
 # =========================
-attack_count = 0
-normal_count = 0
-
-for name in [
-    "LogisticRegression",
-    "DecisionTree",
-    "RandomForest",
-    "SVM",
-    "KNN",
-    "AdaBoost",
-    "GradientBoosting"
-]:
-
-    model = joblib.load(f"{name}.joblib")
-    pred = model.predict(X)
-
-    attack_count += (pred != 0).sum()
-    normal_count += (pred == 0).sum()
+model = joblib.load("RandomForest.joblib")
+pred = model.predict(X)
 
 # =========================
-# 4) SONUÇ
+# 5) LABEL DECODE
 # =========================
-print("\n--- SONUÇ ---")
-print("Normal:", normal_count)
-print("Attack:", attack_count)
+le = joblib.load("label_encoder.pkl")
+labels = le.inverse_transform(pred)
 
-if attack_count > normal_count:
-    print("🚨 SALDIRI VAR")
+# =========================
+# 6) SAYIM
+# =========================
+counter = Counter(labels)
+
+print("\n--- IDS ANALİZ SONUCU ---")
+
+for label, count in counter.items():
+    if label == "BENIGN":
+        print(f"{label}: {count}")
+    else:
+        print(f" {label}: {count}")
+
+# =========================
+# 7) GENEL DURUM
+# =========================
+attack_total = sum(count for label, count in counter.items() if label != "BENIGN")
+normal_total = counter.get("BENIGN", 0)
+
+print("\n--- GENEL DURUM ---")
+
+if attack_total > normal_total:
+    print(" SALDIRI VAR")
 else:
-    print("🟢 NORMAL TRAFİK")
+    print(" NORMAL TRAFİK")
